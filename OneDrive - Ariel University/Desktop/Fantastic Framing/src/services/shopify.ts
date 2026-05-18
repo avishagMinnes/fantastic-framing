@@ -140,6 +140,14 @@ function buildLineItems(data: Extraction) {
 
 // ─── Per-outcome draft builders ───────────────────────────────────────────────
 
+function buildNoteAttributes(data: Extraction): Array<{ name: string; value: string }> {
+  const attrs: Array<{ name: string; value: string }> = [];
+  if (data.order_reference) {
+    attrs.push({ name: "Order Reference", value: data.order_reference });
+  }
+  return attrs;
+}
+
 function draftedPayload(
   email: EmailRow,
   artistName: string,
@@ -148,17 +156,22 @@ function draftedPayload(
 ): Record<string, unknown> {
   const customer = buildCustomer(data, shopifyCustomerId);
   const shippingAddress = buildShippingAddress(data);
+  const noteAttributes = buildNoteAttributes(data);
 
   return {
     draft_order: {
       line_items: buildLineItems(data),
       ...(customer ? { customer } : {}),
+      // Set email + phone directly on the draft so the Contact section is
+      // always populated, even if customer linking fails or has no ID yet.
+      ...(data.customer.email ? { email: data.customer.email } : {}),
       ...(shippingAddress ? { shipping_address: shippingAddress } : {}),
       ...(data.shipping_cost != null
         ? { shipping_line: { price: data.shipping_cost.toFixed(2), title: "Shipping" } }
         : {}),
       note: email.rawBodyText ?? "",
       tags: buildTags(artistName, []),
+      ...(noteAttributes.length > 0 ? { note_attributes: noteAttributes } : {}),
     },
   };
 }

@@ -21,7 +21,8 @@ if (!TOKEN) {
 }
 
 const body = new FormData();
-body.append("headers", "Message-ID: <test-order-001@fantastic-framing-test.com>\r\nDate: Mon, 18 May 2026 10:00:00 +0000\r\nFrom: Haven Prints <hello@havenprints.com.au>\r\nTo: orders@fantasticframing.com.au\r\nSubject: Haven Prints Order 9999");
+const uniqueId = `test-order-${Date.now()}@fantastic-framing-test.com`;
+body.append("headers", `Message-ID: <${uniqueId}>\r\nDate: Mon, 18 May 2026 10:00:00 +0000\r\nFrom: Haven Prints <hello@havenprints.com.au>\r\nTo: orders@fantasticframing.com.au\r\nSubject: Haven Prints Order 9999`);
 body.append("from", "Haven Prints <hello@havenprints.com.au>");
 body.append("to", "orders@fantasticframing.com.au");
 body.append("subject", "Haven Prints Order 9999");
