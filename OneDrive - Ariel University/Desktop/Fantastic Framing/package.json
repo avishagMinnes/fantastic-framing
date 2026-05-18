@@ -1,0 +1,38 @@
+{
+  "name": "fantastic-framing-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "worker": "tsx watch src/worker.ts",
+    "build": "tsc --noEmit",
+    "start": "node --import tsx/esm dist/server.js",
+    "start:worker": "node --import tsx/esm dist/worker.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "replay": "tsx scripts/replay.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@fastify/basic-auth": "^6.2.0",
+    "@fastify/formbody": "^8.0.2",
+    "@fastify/multipart": "^10.0.0",
+    "bullmq": "^5.34.0",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.40.0",
+    "fastify": "^5.2.1",
+    "ioredis": "^5.4.1",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "drizzle-kit": "^0.30.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
+  }
+}

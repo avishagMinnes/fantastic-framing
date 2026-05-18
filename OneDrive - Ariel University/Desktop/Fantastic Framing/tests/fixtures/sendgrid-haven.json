@@ -1,0 +1,12 @@
+{
+  "_comment": "Recorded SendGrid Inbound Parse form fields for a Haven Prints order email. Used by the webhook integration test and the replay script. Attachments omitted (no real PDF bytes here).",
+  "from": "Haven Prints <hello@havenprints.com.au>",
+  "to": "framingordershavenprints@gmail.com",
+  "subject": "Haven Prints Order 2382",
+  "headers": "Message-ID: <haven-order-2382-fixture@mail.gmail.com>\r\nDate: Tue, 05 May 2026 06:44:00 +0000\r\nFrom: Haven Prints <hello@havenprints.com.au>\r\nTo: framingordershavenprints@gmail.com\r\nSubject: Haven Prints Order 2382",
+  "text": "Order #2382\n1 x oak framed canvas print\n\n--------------------\n\nArtwork Name: Kookaburra in Pink No.2\nSize: 60cm (w) x 80cm (h)\nOrientation: Portrait\nJob Type: Framed Canvas Print\nColour of frame: Oak\nArtwork File: https://drive.google.com/open?id=1JVXdDF8-QE-ifs7MEWsDfQaw5dpx9PX8\n\n--------------------\n\nCustomer Details:\n\nLynda Davidson\n18-22 Jollytail Avenue\nNew Beith\nQueensland 4124\nAustralia\n+61419005797\n\nEmail: lyndadavidson783@gmail.com",
+  "html": "",
+  "attachments": "0",
+  "spam_score": "0.1",
+  "SPF": "pass"
+}
