@@ -7,28 +7,33 @@ const API_VERSION = "2024-10";
 
 type EmailRow = typeof emails.$inferSelect;
 
-// ─── HTTP helper ──────────────────────────────────────────────────────────────
+// ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
-async function shopifyPost(path: string, body: unknown): Promise<unknown> {
+async function shopifyRequest(method: string, path: string, body?: unknown): Promise<unknown> {
   const url = `https://${config.SHOPIFY_SHOP_DOMAIN}/admin/api/${API_VERSION}/${path}`;
   const res = await fetch(url, {
-    method: "POST",
+    method,
     headers: {
       "Content-Type": "application/json",
       "X-Shopify-Access-Token": config.SHOPIFY_ADMIN_API_TOKEN,
     },
-    body: JSON.stringify(body),
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "(empty body)");
-    // Throw for all errors — BullMQ's exponential backoff handles transient 5xx.
-    // 4xx errors (bad token, invalid payload) will exhaust retries and surface
-    // the email on the admin page for manual handling.
     throw new Error(`Shopify ${res.status} ${res.statusText}: ${text}`);
   }
 
   return res.json();
+}
+
+async function shopifyPost(path: string, body: unknown): Promise<unknown> {
+  return shopifyRequest("POST", path, body);
+}
+
+async function shopifyGet(path: string): Promise<unknown> {
+  return shopifyRequest("GET", path);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,11 +55,58 @@ export function shopifyDraftUrl(draftId: string): string {
   return `https://${config.SHOPIFY_SHOP_DOMAIN}/admin/draft_orders/${draftId}`;
 }
 
+// ─── Customer lookup / creation ───────────────────────────────────────────────
+
+/**
+ * Finds an existing Shopify customer by email or creates a new one.
+ * Returns the Shopify customer ID so the draft order can reference them by ID,
+ * which ensures the customer name appears correctly in the Contact section.
+ * Falls back to undefined (inline customer object) on any API error.
+ */
+async function findOrCreateCustomer(data: Extraction): Promise<number | undefined> {
+  if (!data.customer.email && !data.customer.name) return undefined;
+
+  try {
+    // Search for existing customer by email first
+    if (data.customer.email) {
+      const searchRes = await shopifyGet(
+        `customers/search.json?query=email:${encodeURIComponent(data.customer.email)}&limit=1`,
+      ) as { customers: Array<{ id: number }> };
+
+      if (searchRes.customers.length > 0) {
+        return searchRes.customers[0].id;
+      }
+    }
+
+    // No existing customer — create one
+    const { first_name, last_name } = data.customer.name
+      ? splitName(data.customer.name)
+      : { first_name: "", last_name: "" };
+
+    const createRes = await shopifyPost("customers.json", {
+      customer: {
+        first_name,
+        last_name,
+        ...(data.customer.email ? { email: data.customer.email } : {}),
+        ...(data.customer.phone ? { phone: data.customer.phone } : {}),
+      },
+    }) as { customer: { id: number } };
+
+    return createRes.customer.id;
+  } catch {
+    // Non-fatal — fall back to inline customer object on the draft order
+    return undefined;
+  }
+}
+
 // ─── Payload builders ─────────────────────────────────────────────────────────
 
-function buildCustomer(data: Extraction) {
-  if (!data.customer.name) return undefined;
-  const { first_name, last_name } = splitName(data.customer.name);
+function buildCustomer(data: Extraction, shopifyCustomerId?: number) {
+  if (shopifyCustomerId) return { id: shopifyCustomerId };
+  if (!data.customer.name && !data.customer.email) return undefined;
+  const { first_name, last_name } = data.customer.name
+    ? splitName(data.customer.name)
+    : { first_name: "", last_name: "" };
   return {
     first_name,
     last_name,
@@ -92,8 +144,9 @@ function draftedPayload(
   email: EmailRow,
   artistName: string,
   data: Extraction,
+  shopifyCustomerId?: number,
 ): Record<string, unknown> {
-  const customer = buildCustomer(data);
+  const customer = buildCustomer(data, shopifyCustomerId);
   const shippingAddress = buildShippingAddress(data);
 
   return {
@@ -115,6 +168,7 @@ function needsReviewPayload(
   artistName: string,
   data: Extraction,
   decision: Decision,
+  shopifyCustomerId?: number,
 ): Record<string, unknown> {
   const uncertain = [...decision.missingRequired, ...decision.missingOptional];
   const warningBlock = [
@@ -131,7 +185,7 @@ function needsReviewPayload(
     email.rawBodyText ?? "(no body text)",
   ].join("\n");
 
-  const base = draftedPayload(email, artistName, data);
+  const base = draftedPayload(email, artistName, data, shopifyCustomerId);
   const draftOrder = base.draft_order as Record<string, unknown>;
 
   return {
@@ -185,19 +239,18 @@ export async function createShopifyDraft(
 
   if (decision.outcome === "failed") {
     payload = failedPayload(email, artistName);
-  } else if (decision.outcome === "needs_review") {
-    payload = needsReviewPayload(
-      email,
-      artistName,
-      (result as { type: "success"; data: Extraction }).data,
-      decision,
-    );
   } else {
-    payload = draftedPayload(
-      email,
-      artistName,
-      (result as { type: "success"; data: Extraction }).data,
-    );
+    const data = (result as { type: "success"; data: Extraction }).data;
+    // Find or create the Shopify customer so the draft Contact section shows
+    // the customer name correctly (referencing by ID is more reliable than
+    // passing inline first_name/last_name).
+    const shopifyCustomerId = await findOrCreateCustomer(data);
+
+    if (decision.outcome === "needs_review") {
+      payload = needsReviewPayload(email, artistName, data, decision, shopifyCustomerId);
+    } else {
+      payload = draftedPayload(email, artistName, data, shopifyCustomerId);
+    }
   }
 
   const res = (await shopifyPost("draft_orders.json", payload)) as {
