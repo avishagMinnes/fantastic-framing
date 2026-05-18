@@ -7,13 +7,13 @@
     "dev": "tsx watch src/server.ts",
     "worker": "tsx watch src/worker.ts",
     "build": "tsc --noEmit",
-    "start": "node --import tsx/esm dist/server.js",
-    "start:worker": "node --import tsx/esm dist/worker.js",
+    "start": "tsx src/main.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
-    "replay": "tsx scripts/replay.ts"
+    "replay": "tsx scripts/replay.ts",
+    "get-shopify-token": "tsx scripts/get-shopify-token.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",

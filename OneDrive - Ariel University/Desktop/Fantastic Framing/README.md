@@ -13,12 +13,19 @@ npm install
 
 # 3. Copy and fill in environment variables
 cp .env.example .env
-# Edit .env with your real API keys
+# Edit .env: fill in ANTHROPIC_API_KEY, SHOPIFY_SHOP_DOMAIN,
+# SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, and the other vars.
 
-# 4. Run database migrations
+# 4. Generate your Shopify Admin API token (one-time step)
+#    In Shopify Admin: Settings → Apps and sales channels → your custom app
+#    → API credentials → copy Client ID and Client Secret into .env, then:
+npm run get-shopify-token
+#    Paste the printed token into SHOPIFY_ADMIN_API_TOKEN in .env.
+
+# 5. Run database migrations
 npm run db:migrate
 
-# 5. Start the dev server (hot-reload)
+# 6. Start the dev server (hot-reload)
 npm run dev
 ```
 
@@ -30,7 +37,9 @@ The server starts on `http://localhost:3000`. Visit `/healthz` to verify it is r
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
 | `SHOPIFY_SHOP_DOMAIN` | Yes | e.g. `your-shop.myshopify.com` |
-| `SHOPIFY_ADMIN_API_TOKEN` | Yes | Shopify Admin API access token (`shpat_...`) |
+| `SHOPIFY_CLIENT_ID` | One-time | Client ID from Shopify Admin → Apps → your app → API credentials (only needed to generate the token below) |
+| `SHOPIFY_CLIENT_SECRET` | One-time | Client Secret from the same page |
+| `SHOPIFY_ADMIN_API_TOKEN` | Yes | Shopify Admin API access token — generate with `npm run get-shopify-token` |
 | `SENDGRID_INBOUND_TOKEN` | Yes | Long random string appended to the SendGrid Inbound Parse webhook URL for auth |
 | `DATABASE_URL` | Yes | Postgres connection string |
 | `REDIS_URL` | Yes | Redis connection string |

@@ -60,7 +60,13 @@ if (idArg) {
   const id = parseInt(idArg, 10);
   if (isNaN(id)) { console.error("--id must be a number"); process.exit(1); }
 
-  const [row] = await db.select().from(emails).where(eq(emails.id, id)).limit(1);
+  let row: EmailRow | undefined;
+  try {
+    [row] = await db.select().from(emails).where(eq(emails.id, id)).limit(1);
+  } catch (err) {
+    console.error("Could not connect to the database. Is Docker running?\n", err);
+    process.exit(1);
+  }
   if (!row) { console.error(`Email ${id} not found in database`); process.exit(1); }
   email = row;
 
@@ -81,11 +87,16 @@ if (idArg) {
 
 // ─── Load / synthesise artist profile ────────────────────────────────────────
 
-const [artistRow] = await db
-  .select()
-  .from(artistProfiles)
-  .where(eq(artistProfiles.email, email.sender))
-  .limit(1);
+let artistRow: typeof artistProfiles.$inferSelect | undefined;
+try {
+  [artistRow] = await db
+    .select()
+    .from(artistProfiles)
+    .where(eq(artistProfiles.email, email.sender))
+    .limit(1);
+} catch {
+  // DB not reachable (e.g. Docker not running) — fall through to stub below.
+}
 
 // If the artist isn't in the DB yet (e.g. replaying from a fixture in CI),
 // use a minimal stub so the prompt still has artist context.

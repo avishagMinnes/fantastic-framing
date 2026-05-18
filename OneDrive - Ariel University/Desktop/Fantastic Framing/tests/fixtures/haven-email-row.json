@@ -1,0 +1,14 @@
+{
+  "id": 1,
+  "messageId": "haven-order-2382-fixture@mail.gmail.com",
+  "sender": "hello@havenprints.com.au",
+  "subject": "Haven Prints Order 2382",
+  "receivedAt": "2026-05-05T06:44:00.000Z",
+  "rawBodyText": "Order #2382\n1 x oak framed canvas print\n\n--------------------\n\nArtwork Name: Kookaburra in Pink No.2\nSize: 60cm (w) x 80cm (h)\nOrientation: Portrait\nJob Type: Framed Canvas Print\nColour of frame: Oak\nArtwork File: https://drive.google.com/open?id=1JVXdDF8-QE-ifs7MEWsDfQaw5dpx9PX8\n\n--------------------\n\nCustomer Details:\n\nLynda Davidson\n18-22 Jollytail Avenue\nNew Beith\nQueensland 4124\nAustralia\n+61419005797\n\nEmail: lyndadavidson783@gmail.com",
+  "rawBodyHtml": null,
+  "status": "pending",
+  "shopifyDraftId": null,
+  "error": null,
+  "attachments": null,
+  "createdAt": "2026-05-05T06:44:00.000Z"
+}
